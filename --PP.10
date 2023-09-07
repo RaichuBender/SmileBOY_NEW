@@ -1,0 +1,467 @@
+'goto @fndef
+OPTION DEFINT
+OPTION STRICT
+
+const #inSLOT=1
+CONST #ppSLOT=2
+const #exSLOT=3
+
+IF(BUTTON(0,#B_L1))THEN EXEC 3
+
+CONST #PNK=&h_FFFF7FFF
+CONST #ORN=&h_FFFF7F00
+
+CONST #NL=CHR$(&h_00)
+CONST #LF=CHR$(&h_0A)
+CONST #CR=CHR$(&h_0D)
+CONST #DQ=CHR$(&h_22)
+
+CONST #N ="0123456789"
+CONST #X=#N+"AaBbCcDdEeFf"
+CONST #ABC="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_"
+
+
+VAR N%
+
+
+DIM LINES$'=ARRAY$(0)
+DIM LINE0$=""
+'DIM LINE1$=""
+
+VAR I,J,K,L,M,N
+VAR SN$=""
+
+
+
+acls
+exec"fcp",4
+xscreen 1280,720
+tscreen 8,16
+
+
+
+PRGEDIT #ppSLOT,1
+PRGDEL -1
+PRGINS                      \
+ "CONST #DQ=CHR$(&h22)"+#CR+\
+ "CONST #LF=CHR$(&h0A)"+#CR+\
+ "CONST #CR=CHR$(&h0D)"+#CR+\
+ "PRGEDIT "+STR$(#exSLOT)+#CR+\
+ "PRGDEL -1"+#CR
+
+LINES$ = FOREACH(PrgSlotToArray$(#inSLOT), "LINE_LOOP$")
+
+PUSH LINE0$,#DQ+#DQ+#LF
+IF(BUTTON(0,#B_R1))THEN
+  PRGINS "PRGINS "+LINE0$
+ELSE
+  PRGINS "PRGINS "+LINE0$+#CR+"EXEC "+STR$(#exSLOT)
+ENDIF
+EXEC #ppSLOT
+
+
+@fndef
+'==================================
+COMMON DEF _PRINT __txt$ OUT *
+'==================================
+  PRINT __txt$';
+'==================================
+END
+'==================================
+
+
+COMMON DEF _TEST OUT Y
+  Y="TESTING"
+  RETURN THIS_WILL_BE_IGNORED
+END
+
+
+  VAR M%
+'==================================
+COMMON DEF SERIALIZE * OUT ARR
+'==================================
+  ON TYPEOF(DEFARG(0)) GOTO \
+    @T_DEFAULT,@T_INT,@T_REAL,@T_STR
+
+  @T_DEFAULT:BEEP 2:STOP "Type mismatch (SERIALIZE)"
+  @T_INT :ARR=ARRAY%(0):GOTO @SERIALIZE
+  @T_REAL:ARR=ARRAY#(0):GOTO @SERIALIZE
+  @T_STR :ARR=ARRAY$(0):GOTO @SERIALIZE
+
+  @SERIALIZE
+  FOR M%=0 TO DEFARGC()-1
+    PUSH ARR,DEFARG(M%)
+  NEXT
+
+  RETURN ARR
+'==================================
+END
+'==================================
+
+
+'==================================
+DEF PROC_MACRO LINE1$
+'==================================
+  IF(LINE0$=="")THEN
+    PRGINS RIGHT$(LINE1$,LAST(LINE1$))
+    RETURN
+  ENDIF
+  PRGINS "PRGINS "+LEFT$(LINE0$,LAST(LINE0$))
+  PRGINS RIGHT$(LINE1$,LAST(LINE1$))
+  LINE0$=""
+'==================================
+END
+'==================================
+
+
+'==================================
+DEF LINE_LOOP$ LINE1$ OUT WIRE$
+'==================================
+  WIRE$=LINE1$
+
+  IF(LEFT$(WIRE$,5)=="\DEF"+CHR$(&H0D))THEN\
+    WIRE$=RIGHT$(WIRE$,LEN(WIRE$)-5)
+
+  IF(LEN(WIRE$)<=0)THEN\
+    RETURN
+
+  WHILE((WIRE$[0]==" ")||(WIRE$[0]=="`"))
+    WIRE$=RIGHT$(WIRE$,LAST(WIRE$))
+    IF(WIRE$=="")||(WIRE$==#LF)||(WIRE$==#CR)THEN\
+      RETURN
+  WEND
+
+  IF(WIRE$=="")||(WIRE$==#LF)||(WIRE$==#CR)THEN\
+    RETURN
+
+  LINE1$=WIRE$
+  IF(LEFT$(LINE1$,3)=="REM")THEN\
+    RETURN
+
+  IF(INSTR("'\"+#LF+#CR,LINE1$[0])+1)THEN\
+    RETURN
+
+  IF(LINE1$[0]==":")THEN
+    PROC_MACRO LINE1$:RETURN
+  ENDIF
+
+  WIRE$=""
+  FOR I=0TO LAST(LINE1$)
+    CASE(LINE1$[I])
+      WHEN(#DQ):
+        PUSH WIRE$,#DQ+"+#DQ+"+#DQ
+        I=I+1
+        WHILE(INSTR(#DQ+#LF+#CR,LINE1$[I])==-1)
+          PUSH WIRE$,LINE1$[I]
+          I=I+1
+        WEND
+        PUSH WIRE$,#DQ+"+#DQ+"+#DQ
+      WHEN("A"):WHEN("B"):WHEN("C"):WHEN("D"):
+      WHEN("E"):WHEN("F"):WHEN("G"):WHEN("H"):
+      WHEN("I"):WHEN("J"):WHEN("K"):WHEN("L"):
+      WHEN("M"):WHEN("N"):WHEN("O"):WHEN("P"):
+      WHEN("Q"):WHEN("R"):WHEN("S"):WHEN("T"):
+      WHEN("U"):WHEN("V"):WHEN("W"):WHEN("X"):
+      WHEN("Y"):WHEN("Z"):
+      WHEN("a"):WHEN("b"):WHEN("c"):WHEN("d"):
+      WHEN("e"):WHEN("f"):WHEN("g"):WHEN("h"):
+      WHEN("i"):WHEN("j"):WHEN("k"):WHEN("l"):
+      WHEN("m"):WHEN("n"):WHEN("o"):WHEN("p"):
+      WHEN("q"):WHEN("r"):WHEN("s"):WHEN("t"):
+      WHEN("u"):WHEN("v"):WHEN("w"):WHEN("x"):
+      WHEN("y"):WHEN("z"):WHEN("_"):
+        IF(LINE1$[I]=="_")THEN
+          PUSH WIRE$,LINE1$[I]
+        ELSE
+          PUSH WIRE$,CHR$(ASC(LINE1$[I])OR &b_0100000)
+        ENDIF
+        WHILE(INSTR(#ABC+#N,LINE1$[I+1])+1)
+          I=I+1
+          IF(LINE1$[I]=="_")THEN
+            PUSH WIRE$,LINE1$[I]
+          ELSE
+            PUSH WIRE$,CHR$(ASC(LINE1$[I])OR &b_0100000)
+          ENDIF
+        WEND
+      WHEN("@"):
+        PUSH WIRE$,LINE1$[I]
+        WHILE(INSTR(#ABC+#N,LINE1$[I+1])+1)
+          I=I+1
+          IF(LINE1$[I]=="_")THEN
+            PUSH WIRE$,LINE1$[I]
+          ELSE
+            PUSH WIRE$,CHR$(ASC(LINE1$[I])OR &b_0100000)
+          ENDIF
+        WEND
+      WHEN("#"):
+        PUSH WIRE$,LINE1$[I]
+        WHILE(INSTR(#ABC+#N,LINE1$[I+1])+1)
+          I=I+1
+          IF(LINE1$[I]=="_")THEN
+            PUSH WIRE$,LINE1$[I]
+          ELSE
+            PUSH WIRE$,CHR$(ASC(LINE1$[I])OR &b_0100000)
+          ENDIF
+        WEND
+      WHEN("&"):
+        IF(LINE1$[I+1]!="&")THEN
+          IF(I!=0)THEN
+            IF(INSTR("!^*()-+=[]\:,?",LINE1$[I-1])==-1)THEN
+              PUSH WIRE$," "
+            ENDIF
+          ENDIF
+          SN$=""
+          PUSH SN$,LINE1$[I]
+          WHILE(INSTR("HhBb_"+#X,LINE1$[I+1])+1)
+            I=I+1
+            PUSH SN$,LINE1$[I]
+          WEND
+          SN$=Str$(VAL(SN$))
+          FOR K=0 TO LAST(SN$)
+            PUSH WIRE$,SN$[K]
+          NEXT
+        ELSE
+          I=I+1PUSH WIRE$,"&&"
+        ENDIF
+      WHEN("0"):
+        IF(INSTR("XxBb",LINE1$[I+1])+1)THEN
+          IF(I!=0)THEN
+            IF(INSTR("!^*()-+=[]\:,?",LINE1$[I-1])==-1)THEN
+              PUSH WIRE$," "
+            ENDIF
+          ENDIF
+          SN$=""
+          IF(INSTR("Xx",LINE1$[I+1])+1)THEN
+            PUSH SN$,"&H"
+          ELSE
+            PUSH SN$,"&B"
+          ENDIF
+          I=I+1
+          WHILE(INSTR("_"+#X,LINE1$[I+1])+1)
+            I=I+1
+            PUSH SN$,LINE1$[I]
+          WEND
+          SN$=Str$(VAL(SN$))
+          FOR K=0 TO LAST(SN$)
+            PUSH WIRE$,SN$[K]
+          NEXT
+        ELSE
+          PUSH WIRE$,LINE1$[I]
+        ENDIF
+      WHEN("{"):
+        PUSH WIRE$,#DQ+"+"
+        I=I+1
+        WHILE(LINE1$[I]!="}")
+          PUSH WIRE$,LINE1$[I]
+          I=I+1
+        WEND
+        PUSH WIRE$,"+"+#DQ
+      WHEN(""):
+        PUSH WIRE$,#DQ+"+Str$("
+        I=I+1
+        WHILE(LINE1$[I]!="")
+          PUSH WIRE$,LINE1$[I]
+          I=I+1
+        WEND
+        PUSH WIRE$,")+"+#DQ
+      WHEN(""):
+        PUSH WIRE$,#DQ+"+Str$(FLOOR("
+        I=I+1
+        WHILE(LINE1$[I]!="")
+          PUSH WIRE$,LINE1$[I]
+          I=I+1
+        WEND
+        PUSH WIRE$,"))+"+#DQ
+      WHEN(""):
+        PUSH WIRE$,#DQ+"+Str$(ROUND("
+        I=I+1
+        WHILE(LINE1$[I]!="")
+          PUSH WIRE$,LINE1$[I]
+          I=I+1
+        WEND
+        PUSH WIRE$,"))+"+#DQ
+      WHEN(" "):
+        IF(I!=0)THEN
+          IF(INSTR("!$%^*()-+=[]:;"+#DQ+",?",LINE1$[I-1])!=-1)THEN
+            LINE1$[I]=""
+            I=I-1
+          ENDIF
+        ENDIF
+        WHILE(LINE1$[I+1]==" ")
+          I=I+1
+        WEND
+        IF(I!=LAST(WIRE$))&&(INSTR("!$%^&*()-+=[]\:;"+#DQ+",?",LINE1$[I+1])==-1)THEN
+          PUSH WIRE$," "
+        ENDIF
+      WHEN("\"):
+        WHILE(LINE1$[I+1]!=#LF)
+          I=I+1
+        WEND
+        PUSH WIRE$,"\"
+      WHEN("'"):
+        WHILE(LINE1$[I+1]!=#LF)
+          I=I+1
+        WEND
+      WHEN("Π"):WHEN("π"):
+        PUSH WIRE$,"#PI"
+      WHEN("Е"):WHEN("е"):
+        PUSH WIRE$,"#EXP"
+      WHEN(#LF):
+      WHEN(#CR):
+        CONTINUE
+      OTHERWISE:
+        PUSH WIRE$,LINE1$[I]
+    ENDCASE
+  NEXT
+  LINE1$=WIRE$
+  IF(LEN(LINE0$)>=&h_1000)THEN
+    PUSH LINE0$,#DQ+LINE1$+#DQ
+    PRGINS "PRGINS "+LINE0$
+    LINE0$=""
+  ELSE
+    PUSH LINE0$,#DQ+LINE1$+#DQ+"+#LF+"
+  ENDIF
+'==================================
+END
+'==================================
+
+
+  var line%,linp%
+  var prged%
+'==================================
+def PrgSlotToArray$ __slot_% out _$
+'==================================
+  _$=array$(0)
+
+  prgedit out prged%,linp%
+  prgedit __slot_%
+
+  for line%=1 to prgsize(__slot_%,0)
+    push _$,prgget$(1)
+  next line%
+
+  prgedit prged%,linp%
+  return
+'==================================
+end
+'==================================
+
+
+enum #ret1=1
+
+  dim CMD$
+  var FnType%
+  var arg
+  var argv
+'==================================
+common def dbglog *
+'==================================
+  CMD$ = defarg(0)
+  FnType% = defarg(1)
+
+  if(FnType%==#ret1)then
+    ?format$("%s(",CMD$);
+  endif
+
+  for arg=2 to defargc()-1
+    argv=defarg(arg)
+    case typeof(argv)
+      when #T_DEFAULT:
+        ?"<null>";
+
+      when #T_INT:
+        ?format$("%d",argv);
+      when #T_REAL:
+        ?format$("%f",argv);
+      when #T_STR:
+        ?format$("＂%s＂",argv);
+
+      when #T_INTARRAY:
+        ?format$("ARRAY%%(%d)",len(argv));
+      when #T_REALARRAY:
+        ?format$("ARRAY#(%d)",len(argv));
+      when #T_STRARRAY:
+        ?format$("ARRAY$(%d)",len(argv));
+    endcase
+
+    if arg != (defargc()-1) then\
+      ?",";
+
+  next arg
+
+  if(FnType%==#ret1)then
+    ?")";
+  endif
+
+  ?
+'==================================
+end
+'==================================
+
+
+VAR OY=0
+
+  var  ARR_
+' var  CMD$
+  var last%
+'==================================
+common def foreach * out *
+'==================================
+   ARR_ = defarg(0)
+   CMD$ = defarg(1)
+  last% = last(ARR_)
+
+  if(defoutc())then \
+    defout 0,ARR_
+
+  for N%=0 to last%
+
+    if(0==chkcall(CMD$))then \
+      unshift CMD$,"_"
+
+' COLOR RGB(255,127,127)
+' ?"  ";ARR_[N%];
+
+    if(defoutc())then
+      ARR_[N%] = call(CMD$,ARR_[N%])
+      continue
+    endif
+    call CMD$,ARR_[N%]
+
+' COLOR RGB(127,255,127)
+' ?"  ";ARR_[N%]
+
+  next N%
+
+'==================================
+end
+'==================================
+
+'''''==================================
+''''common def foreach * out *
+'''''==================================
+''''  if defoutc() then \
+''''    defout 0,defarg(0)
+''''
+''''  for N%=0 to last(defarg(0))
+''''
+''''    if chkcall(defarg(1))==0 then \
+''''      unshift defarg(1),"_"
+''''
+''''    COLOR RGB(255,127,127)
+''''    ?"  ";defarg(0)[N%];
+''''    if defoutc() then
+''''      defarg(0)[N%] = call(defarg(1), defarg(0)[N%])
+''''    else
+''''      call defarg(1), defarg(0)[N%]
+''''    endif
+''''    COLOR RGB(127,255,127)
+''''    ?"  ";defarg(0)[N%]
+''''
+''''  next N%
+'''''==================================
+''''end
+'''''==================================
+
+@__EOF__
+

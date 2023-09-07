@@ -1,0 +1,63 @@
+DEF ChrProc Ch_,Cl%
+  VAR X%,Y%
+  FONTINFO Ch_, 8 OUT X%,Y%
+  GPUTCHR X%,Y%,Ch_, 8,1,1,Cl%
+  FONTINFO Ch_,16 OUT X%,Y%
+  GPUTCHR X%,Y%,Ch_,16,1,1,Cl%
+END
+
+DEF ChrPrrc Ch_,Rp_,Cl%
+  VAR X%,Y%
+  FONTINFO Ch_, 8 OUT X%,Y%
+  GPUTCHR X%,Y%,Rp_, 8,1,1,Cl%
+  FONTINFO Ch_,16 OUT X%,Y%
+  GPUTCHR X%,Y%,Rp_,16,1,1,Cl%
+END
+
+COMMON DEF FontProc * OUT *
+FOR _=0TO DEFOUTC()-1DEFOUT _,0NEXT
+  LOADG"GRP:#SYS/DEFFONT",5
+  VAR GTAR%=GTARGET()
+  GTARGET 3
+  GCOPY 5,0,0,2047,2047,0,0,#G_NORMAL
+  ChrProc "|",RGB(255,255,  0, 63)
+  ChrProc "^",RGB(255,127,255, 35)
+  ChrProc "<",RGB(255,127,255, 35):ChrProc ">",RGB(255,127,255, 35)
+  ChrProc "(",RGB(255, 35,255,191):ChrProc ")",RGB(255, 35,255,191)
+  ChrProc "[",RGB(255, 35,127,255):ChrProc "]",RGB(255, 35,127,255)
+  ChrProc "{",RGB(255,255,191, 35):ChrProc "}",RGB(255,255,191, 35)
+  ChrProc "%",RGB(255,127,255, 35)
+  ChrProc "#",RGB(255,255,  0,127)
+  ChrProc "$",RGB(255,239,127, 35)
+  ChrProc "&",RGB(255,255,  0, 63)
+  ChrProc "*",RGB(255,255,191,  0)
+  ChrProc "/",RGB(255,127,255, 35)
+  ChrProc "!",RGB(255,255,  0, 63)
+  ChrProc "＂",RGB(255,239,127, 35)
+  ChrProc "'",RGB(255, 35,127,255)
+  ChrProc "-",RGB(255,255,223, 35)
+  ChrProc "+",RGB(255,255,223, 35)
+  ChrProc "=",RGB(255,255,191,  0)
+  ChrProc "@",RGB(255,255,  0,127)
+  ChrProc "?",RGB(255,239,127, 35)
+  ChrProc "\",RGB(255,255,  0,127)
+  ChrProc "_",RGB(255,255,  0,127)'RGB(255, 35,255,191)
+  ChrProc ";",RGB(255,255,191,  0)
+  ChrProc ":",RGB(255, 35,127,255)
+  ChrProc ",",RGB(255, 35,127,255)
+  ChrProc ".",RGB(255,127,255, 35)
+  ChrProc "",RGB(255, 63, 35, 35)
+  ChrProc "	",RGB(255, 63, 35, 35)
+  ChrPrrc "","<",RGB(255, 35,127,255):ChrPrrc "",">",RGB(255, 35,127,255)
+  ChrPrrc "","<",RGB(255,255,  0,127):ChrPrrc "",">",RGB(255,255,  0,127)
+  GTARGET 5
+  GCOPY 3,0,0,2047,2047,0,0,#G_NORMAL
+  GTARGET GTAR%
+END
+
+FontProc
+
+\ |^<([{％＃＄}])>&*/!＂＇-+=＠?_\;:,．	
+\    
+\    
+
